@@ -13,6 +13,9 @@ const fromCurrency = ref("RUB");
 const to = ref(null);
 const toCurrency = ref("USD");
 
+const isError1 = ref(false);
+const isError2 = ref(false);
+
 watch(fromCurrency, (newValue, oldValue) => {
   if (newValue === toCurrency.value) {
     toCurrency.value = oldValue;
@@ -25,7 +28,20 @@ watch(toCurrency, (newValue, oldValue) => {
   }
 });
 
-const changeAmount = (direction: string, data: string): void => {
+const changeAmount = (direction: string, event: HTMLInputElement): void => {
+  const data: string = event.target.value;
+
+  if (isNaN(data) && direction === "from") {
+    isError1.value = true;
+    return;
+  } else if (isNaN(data) && direction === "to") {
+    isError2.value = true;
+    return;
+  } else {
+    isError1.value = false;
+    isError2.value = false;
+  }
+
   if (direction === "from") {
     from.value = data;
   } else if (direction === "to") {
@@ -35,7 +51,7 @@ const changeAmount = (direction: string, data: string): void => {
     const value: number = currenciesConvert.value[key];
 
     {
-      const [fromData, toData] = key.split("-");
+      const [fromData, toData]: [string, string] = key.split("-");
 
       if (
         fromData.toUpperCase() === fromCurrency.value &&
@@ -48,7 +64,7 @@ const changeAmount = (direction: string, data: string): void => {
     }
 
     {
-      const [toData, fromData] = key.split("-");
+      const [toData, fromData]: [string, string] = key.split("-");
       if (
         fromData.toUpperCase() === fromCurrency.value &&
         toData.toUpperCase() === toCurrency.value
@@ -70,11 +86,7 @@ onBeforeMount(async () => {
   <div class="convert">
     <form class="convert__form">
       <div class="convert__form-input">
-        <input
-          type="number"
-          :value="from"
-          @input="(input) => changeAmount('from', input.target.value)"
-        />
+        <input :value="from" @input="(input) => changeAmount('from', input)" />
 
         <select
           v-model="fromCurrency"
@@ -88,13 +100,12 @@ onBeforeMount(async () => {
             {{ currency }}
           </option>
         </select>
+        <div class="convert__error" v-if="isError1">
+          Принимаются только числа
+        </div>
       </div>
       <div class="convert__form-input">
-        <input
-          type="number"
-          :value="to"
-          @input="(input) => changeAmount('to', input.target.value)"
-        />
+        <input :value="to" @input="(input) => changeAmount('to', input)" />
         <select
           v-model="toCurrency"
           @change="(input) => changeAmount('to', to)"
@@ -107,6 +118,9 @@ onBeforeMount(async () => {
             {{ currency }}
           </option>
         </select>
+        <div class="convert__error" v-if="isError2">
+          Принимаются только числа
+        </div>
       </div>
     </form>
   </div>
@@ -124,12 +138,14 @@ onBeforeMount(async () => {
   &__form {
     display: flex;
     gap: 20px;
+    position: relative;
   }
 
   &__form-input {
     border-radius: 6px;
     border: 1px solid #5f6368;
     display: flex;
+    position: relative;
   }
 
   &__form input {
@@ -152,6 +168,15 @@ onBeforeMount(async () => {
     padding-left: 10px;
     outline: none;
     border-left: 1px solid #eee;
+  }
+
+  &__error {
+    position: absolute;
+    top: 60px;
+    left: 0;
+    font-size: 16px;
+    color: red;
+    padding-left: 5px;
   }
 }
 </style>
